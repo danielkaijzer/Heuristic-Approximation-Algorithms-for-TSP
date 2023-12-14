@@ -13,7 +13,7 @@ std::string trim(const std::string& str) {
 
 int main() {
     // Read input data from file (replace "wi29.tsp" with the actual file name)
-    std::ifstream input("ja9847.tsp");
+    std::ifstream input("dj38.tsp");
 
     if (!input.is_open()) {
         std::cerr << "Error opening file.\n";
