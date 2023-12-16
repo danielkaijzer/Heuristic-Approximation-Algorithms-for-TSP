@@ -1,3 +1,12 @@
+/**
+ * Nearest neighbor is most efficiently
+ * implemented by starting with a collection of unvisited nodes
+ * and calculating distances as you go,
+ * only calculating distances from a node once you visit it.
+ * The collection should have efficient deletion and iteration 
+ * - something linked-list based would probably be a good choice.
+*/
+
 #ifndef NEAREST_NEIGHBOR_HPP
 #define NEAREST_NEIGHBOR_HPP
 
@@ -13,11 +22,14 @@
 
 class Node {
 public:
-    int id; // unique id for city
+    int id; // unique identifier for city
     double x, y; // coordinates
 
+    // parameterized constructor
     Node(int _id, double _x, double _y) : id(_id), x(_x), y(_y) {}
 
+    // used to calculate Euclidian distance (root(x^2 + y^2))
+    // between this node and another node
     double distance(const Node& other) const {
         double dx = x - other.x;
         double dy = y - other.y;
@@ -34,10 +46,17 @@ private:
 
 public:
     NearestNeighbor() = default;
+
     // Constructor
+        // initializes unvisitedNodes list 
+            // (so it contains all Nodes from input file)
+        // initializes total distance to 0.0
+        // doesn't need to initialize tour since that should start empty.
     NearestNeighbor(const std::vector<Node>& nodes) : unvisitedNodes(nodes.begin(), nodes.end()), totalDistance(0.0) {}
 
-        // helper function for run()
+
+    // Checks all nodes in unvisitedNodes for nearest node. 
+    // Returns the nearest node as iterator (points to index in list)
     std::list<Node>::iterator findNearest(const Node& current)
     {
         auto nearest = unvisitedNodes.begin(); // 
@@ -56,24 +75,24 @@ public:
         return nearest;
     }
 
-    // print outputs
-        // id's in order visited
-        // total distance
-        // time in milliseconds
+
+    // print outputs (ids visited in order, distance and duration)
     void printResult(long long duration) const {
+        // prints ids in order visited
         for (const auto& node : tour) {
             std::cout << node.id << " ";
         }
 
         std::cout << "\nTotal Distance: " << totalDistance << "\n";
         std::cout << "Time in ms: " << duration << "\n";
-    }
+        }
+
 
     // main function
     void run() {
         auto start = std::chrono::high_resolution_clock::now();
 
-        // Start with node 1
+        // Start by visiting node 1 (from list of unvisitedNodes)
         Node current = unvisitedNodes.front();
         tour.push_back(current);
         unvisitedNodes.pop_front();
@@ -81,38 +100,41 @@ public:
         // Visit the nearest neighbor until all nodes are visited
         while (!unvisitedNodes.empty()) {
             auto nearest = findNearest(current);
-            totalDistance += current.distance(*nearest);
-            tour.push_back(*nearest);
+            totalDistance += current.distance(*nearest); // update sum
+            tour.push_back(*nearest); // add to tour list
+
+            // visit nearest
             current = *nearest;
-            unvisitedNodes.erase(nearest);
+            unvisitedNodes.erase(nearest); // remove nearest from unvisited
         }
 
         // Return to node 1 to complete tour/cycle
-        totalDistance += current.distance(tour.front());
+        totalDistance += current.distance(tour.front()); // update sum
         tour.push_back(tour.front());
 
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-        printResult(duration);
+        printResult(duration); // prints ids visited, distance and duration
     }
 
 };
 
 // Function to trim whitespaces from the beginning and end of a string
+// helper for nodesFromInput
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(" \t\n\r\f\v");
     size_t last = str.find_last_not_of(" \t\n\r\f\v");
     return (first != std::string::npos && last != std::string::npos) ? str.substr(first, last - first + 1) : "";
 }
 
-
-void nearestNeighbor(std::string filename){
+// creates a vector of Node objects from input text file
+std::vector<Node> nodesFromInput(std::string filename){
     std::ifstream input(filename);
 
     if (!input.is_open()) {
         std::cerr << "Error opening file.\n";
-        return;
+        return {};
     }
 
     std::vector<Node> nodes;
@@ -145,20 +167,28 @@ void nearestNeighbor(std::string filename){
 
             if (iss.fail()) {
                 std::cerr << "Error parsing line: " << line << "\n";
-                return;
+                return {};
             }
 
             nodes.emplace_back(id, x, y);
         }
     }
 
-    if (!nodes.empty()) {
-        NearestNeighbor nn(nodes);
-        nn.run();
-    } else {
-        std::cout << "Didn't read data correctly\n";
+    return nodes;
+}
+
+
+void nearestNeighbor(std::string filename){
+    std::vector<Node> nodes = nodesFromInput(filename);
+
+    if (nodes.empty()){
+        std::runtime_error("Didn't read data correctly\n");
         return;
     }
+
+    NearestNeighbor nn(nodes);
+    nn.run();
+    return;
 }
 
 #endif

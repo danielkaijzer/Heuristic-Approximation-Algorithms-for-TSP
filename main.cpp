@@ -4,11 +4,11 @@
 
 
 int main() {
-    // nearestNeighbor("dj38.tsp");
+    nearestNeighbor("dj38.tsp");
     std::cout << std::endl;
     // nearestNeighbor("ja9847.tsp");
 
-    nearestNeighbor("qa194.tsp");
+    // nearestNeighbor("");
 
     return 0;
 }
