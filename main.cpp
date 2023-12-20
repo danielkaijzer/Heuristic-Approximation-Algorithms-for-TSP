@@ -6,7 +6,15 @@
 int main() {
     nearestNeighbor("dj38.tsp");
     std::cout << std::endl;
-    // nearestNeighbor("ja9847.tsp");
+
+    // nearestNeighbor("qa194.tsp");
+    // std::cout << std::endl;
+
+    // nearestNeighbor("zi929.tsp");
+    // std::cout << std::endl;
+
+    nearestNeighbor("ja9847.tsp");
+    std::cout << std::endl;
 
     // nearestNeighbor("");
 
