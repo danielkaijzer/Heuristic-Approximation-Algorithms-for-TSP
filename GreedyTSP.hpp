@@ -113,11 +113,6 @@ public:
 
     // print outputs (ids visited in order, distance and duration)
     void printResult(long long duration) const {
-        // prints ids in order visited
-        // for (const auto& node : tour) {
-        //     std::cout << node.id << " ";
-        // }
-
         std::cout << "\nTotal Distance: " << totalDistance << "\n";
         std::cout << "Time in ms: " << duration << "\n";
         }
