@@ -5,13 +5,13 @@
 
 
 int main() {
-    // greedyTSP("wi29.tsp"); // 30,052
+    greedyTSP("wi29.tsp"); // 30,052
     std::cout << std::endl;
 
-    greedyTSP("dj38.tsp"); // 28,863, time 1ms
-    std::cout << std::endl;
+    // greedyTSP("dj38.tsp"); // 7019, time 1ms
+    // std::cout << std::endl;
 
-    // greedyTSP("qa194.tsp"); // 9883, time: 29ms
+    // greedyTSP("qa194.tsp"); // 11,521, time: 29ms
     // std::cout << std::endl;
 
     // nearestNeighbor("qa194.tsp");

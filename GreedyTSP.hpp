@@ -248,7 +248,7 @@ public:
                 n1->addNeighbor(n2);
                 n2->addNeighbor(n1);
                 current_edges++;
-                std::cout << "Edge from " << n1->id << " to " << n2->id << " of weight " << edges.top().edge_weight << "\n";
+                // std::cout << "Edge from " << n1->id << " to " << n2->id << " of weight " << edges.top().edge_weight << "\n";
                 totalDistance += edges.top().edge_weight;
             }
 
