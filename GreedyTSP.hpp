@@ -223,11 +223,11 @@ public:
             edges.pop();
         }
 
-        for (auto it : table){
-            std::cout << it.second->neighbor_count << std::endl;
-        }
+        // for (auto it : table){
+        //     std::cout << it.second->neighbor_count << std::endl;
+        // }
 
-        std::cout << current_edges << std::endl;
+        // std::cout << current_edges << std::endl;
 
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
