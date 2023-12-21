@@ -1,3 +1,8 @@
+/*
+1) Calculate weights of all edges 
+2) Sort all edges by weight
+3) Repeatedly add minimum weight edges that won't make cycle
+*/
 
 #ifndef GREEDY_TSP_HPP
 #define GREEDY_TSP_HPP
@@ -11,14 +16,23 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <utility>
+#include <queue>
+#include <unordered_map>
+
 
 class Node {
 public:
     int id; // unique identifier for city
     double x, y; // coordinates
+    Node* neighbor1;
+    Node* neighbor2;
+    int neighbor_count;
+
+    Node() = default;
 
     // parameterized constructor
-    Node(int _id, double _x, double _y) : id(_id), x(_x), y(_y) {}
+    Node(int _id, double _x, double _y) : id(_id), x(_x), y(_y), neighbor1(nullptr), neighbor2(nullptr), neighbor_count(0) {}
 
     // used to calculate Euclidian distance (root(x^2 + y^2))
     // between this node and another node
@@ -27,82 +41,149 @@ public:
         double dy = y - other.y;
         return std::round(std::sqrt(dx * dx + dy * dy)); // euclidean distance
     }
+
+    void addNeighbor(Node* &other){
+        if(neighbor1 == nullptr){
+            neighbor1 = other;
+            neighbor_count++;
+        }
+        else if(neighbor2 == nullptr){
+            neighbor2 = other;
+            neighbor_count++;
+        }
+        else{
+            // throw exception, can't add 3rd neighbor
+            throw std::runtime_error("Can't add 3rd neighbor");
+        }
+    }
+
+    int neighborCount(){
+        return neighbor_count;
+    }
+};
+
+class Edge {
+    public:
+    // unordered pair of nodes
+    std::pair<Node*, Node*> edge;
+    int edge_weight;
+
+    Edge(Node* _n1, Node* _n2): edge(std::make_pair(_n1,_n2)), edge_weight(_n1->distance(*_n2)){}
+
+    bool operator<(const Edge& other) const {
+        return edge_weight > other.edge_weight;
+    }
+
 };
 
 
 class GreedyTSP {
 private:
-    std::list<Node> unvisitedNodes;
-    std::list<Node> tour;
+    std::priority_queue<Edge> edges;
+    // std::list<Node> tour;
     double totalDistance;
+    int tour_edge_count;
+    std::unordered_map<int, Node*> table;
+    
+
 
 public:
     GreedyTSP() = default;
 
     // Constructor
-        // initializes unvisitedNodes list 
-            // (so it contains all Nodes from input file)
-        // initializes total distance to 0.0
-        // doesn't need to initialize tour since that should start empty.
-    GreedyTSP(const std::vector<Node>& nodes) : unvisitedNodes(nodes.begin(), nodes.end()), totalDistance(0.0) {}
-
-
-    // Checks all nodes in unvisitedNodes for nearest node. 
-    // Returns the nearest node as iterator (points to index in list)
-    std::list<Node>::iterator findNearest(const Node& current)
-    {
-        auto nearest = unvisitedNodes.begin(); // 
-        double minDistance = current.distance(*nearest);
-
-        for (auto it = unvisitedNodes.begin(); it != unvisitedNodes.end(); ++it) {
-            double dist = current.distance(*it);
-            // if you find closer city, choose that city instead
-            if (dist < minDistance) {
-                minDistance = dist;
-                nearest = it;
-            }
+    GreedyTSP(const std::vector<Node>& nodes){
+        // add nodes to direct address table
+        for (auto n : nodes){
+            Node * newNode = new Node(n.id,n.x,n.y);
+            table.insert(std::make_pair(n.id,newNode));
+            // std::cout<< table.at(n.id).x;
         }
+        totalDistance = 0.0;
+        tour_edge_count = table.size();
 
-        // return closest unvisited city
-        return nearest;
     }
 
+    ~GreedyTSP(){
+        for (auto& pair : table){
+            delete pair.second;
+            pair.second = nullptr;
+        }
+    }
 
     // print outputs (ids visited in order, distance and duration)
     void printResult(long long duration) const {
         // prints ids in order visited
-        for (const auto& node : tour) {
-            std::cout << node.id << " ";
-        }
+        // for (const auto& node : tour) {
+        //     std::cout << node.id << " ";
+        // }
 
         std::cout << "\nTotal Distance: " << totalDistance << "\n";
         std::cout << "Time in ms: " << duration << "\n";
         }
 
 
+    // function checks if an edge can be added between two nodes
+    // based on two conditions:
+    // 1) if either node already has 2 edges we can't add an edge
+    // 2) if adding an edge between these nodes creates a cycle, we can't add edge
+    bool checkValidEdge(Node* np1, Node* np2) {
+        if (np1 == nullptr || np2 == nullptr) {
+            std::cout << "ERROR\n";
+            throw std::runtime_error("Error");
+        }
+
+        if (np1->neighbor_count == 2 || np2->neighbor_count == 2) {
+            return false;
+        }
+
+        // Check if np1 already has np2 as a neighbor
+        if (np1->neighbor1 == np2 || np1->neighbor2 == np2) {
+            return false;
+        }
+
+        // Check if np2 already has np1 as a neighbor
+        if (np2->neighbor1 == np1 || np2->neighbor2 == np1) {
+            return false;
+        }
+
+        return true;
+    }
+
     // main function
     void run() {
         auto start = std::chrono::high_resolution_clock::now();
 
-        // Start by visiting node 1 (from list of unvisitedNodes)
-        Node current = unvisitedNodes.front();
-        tour.push_back(current);
-        unvisitedNodes.pop_front();
+        // Create an ordered list of all edges sorted by weight
+         // Create edges between all unvisited nodes:
+        for (auto it1 = table.begin(); it1 != table.end(); ++it1) {
+            for (auto it2 = std::next(it1); it2 != table.end(); ++it2) {
+                // Create an edge between the two nodes:
+                Edge edge(it1->second, it2->second);  // Note: Using Node objects directly in Edge constructor
+                edges.push(edge);
+            }
+        }
+        int current_edges = 0;
 
-        // Visit the nearest neighbor until all nodes are visited
-        while (!unvisitedNodes.empty()) {
-            auto nearest = findNearest(current);
-            totalDistance += current.distance(*nearest); // update sum
-            tour.push_back(*nearest); // add to tour list
+        // add minimum edges until you reach maximum number of edges possible |E| = |V| for tour
+        while (current_edges < tour_edge_count && !edges.empty()) {
+            Node* n1 = edges.top().edge.first;
+            Node* n2 = edges.top().edge.second;
 
-            // visit nearest
-            current = *nearest;
-            unvisitedNodes.erase(nearest); // remove nearest from unvisited
+            if (checkValidEdge(n1, n2)) {
+                n1->addNeighbor(n2);
+                n2->addNeighbor(n1);
+                current_edges++;
+                std::cout << "Edge from " << n1->id << " to " << n2->id << " of weight " << edges.top().edge_weight << "\n";
+                totalDistance += edges.top().edge_weight;
+            }
+            edges.pop();
         }
 
-        // Return to node 1 to complete tour/cycle
-        totalDistance += current.distance(tour.front()); // update sum
-        tour.push_back(tour.front());
+        for (auto it : table){
+            std::cout << it.second->neighbor_count << std::endl;
+        }
+
+        std::cout << current_edges << std::endl;
 
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
