@@ -58,6 +58,20 @@ public:
         }
     }
 
+    void removeNeighbor(Node* &other){
+        if(neighbor1 == other){
+            neighbor1 = nullptr;
+        }
+        else if(neighbor2 == other){
+            neighbor2 = nullptr;
+        }
+        else{
+            // throw exception, can't add 3rd neighbor
+            std::cout << "Error: Tried to remove neighbor that isn't there.\n";
+            throw std::runtime_error("Error: Tried to remove neighbor that isn't there.");
+        }
+    }
+
     int neighborCount(){
         return neighbor_count;
     }
@@ -113,46 +127,65 @@ public:
 
     // print outputs (ids visited in order, distance and duration)
     void printResult(long long duration) const {
+
+        // print tour from node 1 back to node 1
+        Node *tmp = table.at(1);
+        Node *start = tmp;  // Store the starting node
+        std::unordered_set<int> visited;
+
+        do{
+            std::cout << tmp->id << " ";
+            visited.insert(tmp->id);
+            // std::cout << visited.count(tmp->neighbor1->id) << " ";
+            if (visited.count(tmp->neighbor1->id) < 1){
+                tmp = tmp->neighbor1;
+            }
+            else if(visited.count(tmp->neighbor2->id) < 1) {
+                tmp = tmp->neighbor2;
+            }
+            else{
+                // std::cout << "CHECK\n";
+                break;
+            }
+        }while(visited.size() != table.size());
+
+        std::cout << start->id;
+
+
         std::cout << "\nTotal Distance: " << totalDistance << "\n";
         std::cout << "Time in ms: " << duration << "\n";
+    }
+
+    bool hasCycleUtil(Node* current, Node* parent, std::unordered_set<Node*>& visited, Node* target) {
+        if (visited.count(current)) {
+            return true;  // Cycle detected
         }
 
-
-
-    // utility function to perform DFS to check for cycles
-    bool hasCycleUtil(Node* current, Node* parent, std::unordered_set<Node*>& visited) {
         visited.insert(current);
 
-        for (Node* neighbor : {current->neighbor1, current->neighbor2}) {
-            if (neighbor != nullptr && neighbor != parent) {
-                if (visited.find(neighbor) == visited.end()) {
-                    if (hasCycleUtil(neighbor, current, visited)) {
-                        return true;
-                    }
-                } else {
-                    return true;
-                }
+        if (current == target) {
+            return false;  // Target node reached without a cycle
+        }
+
+        // Recursively explore neighbors:
+        if (current->neighbor1 != nullptr && current->neighbor1 != parent) {
+            if (hasCycleUtil(current->neighbor1, current, visited, target)) {
+                return true;
             }
         }
 
-        return false;
+        if (current->neighbor2 != nullptr && current->neighbor2 != parent) {
+            if (hasCycleUtil(current->neighbor2, current, visited, target)) {
+                return true;
+            }
+        }
+
+        return false;  // No cycle found from this node
     }
 
-    // function to check if adding an edge between two nodes would create a cycle
     bool hasCycle(Node* np1, Node* np2) {
         std::unordered_set<Node*> visited;
-
-        if (hasCycleUtil(np1, nullptr, visited)) {
-            return true;
-        }
-
-        visited.clear();
-
-        if (hasCycleUtil(np2, nullptr, visited)) {
-            return true;
-        }
-
-        return false;
+        return hasCycleUtil(np1, nullptr, visited, np2) || hasCycleUtil(np2, nullptr, visited, np1);
     }
 
 
@@ -180,12 +213,10 @@ public:
             return false;
         }
 
-        // Check for cycle using DFS
+        // Check if adding nodes as neighbors creates a cycle
         if (hasCycle(np1, np2)) {
-            return false;
-        }
-
-
+        return false;  // Edge would create a cycle
+    }
 
         return true;
     }
@@ -220,12 +251,30 @@ public:
                 std::cout << "Edge from " << n1->id << " to " << n2->id << " of weight " << edges.top().edge_weight << "\n";
                 totalDistance += edges.top().edge_weight;
             }
+
             edges.pop();
         }
 
-        // for (auto it : table){
-        //     std::cout << it.second->neighbor_count << std::endl;
-        // }
+        // finish tour by connecting last two nodes without 2 neighbors
+        Node* tourStart = nullptr;
+        Node* tourEnd = nullptr;
+        for (auto it : table){
+            if (it.second->neighbor_count == 1){
+                // std::cout << it.second->id << std::endl;
+                if(tourStart == nullptr){
+                    tourStart = it.second;
+                    // std::cout << "HELLO" << tourStart->id << std::endl;
+                }
+                else if (tourEnd == nullptr){
+                    tourEnd = it.second;
+                    break;
+                }
+            }
+        }
+        tourStart->addNeighbor(tourEnd);
+        tourEnd->addNeighbor(tourStart);
+        totalDistance += tourStart->distance(*tourEnd);
+        current_edges++;
 
         // std::cout << current_edges << std::endl;
 

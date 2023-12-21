@@ -5,8 +5,8 @@
 
 
 int main() {
-    // nearestNeighbor("wi29.tsp"); // 36,388
-    // std::cout << std::endl;
+    // greedyTSP("wi29.tsp"); // 30,052
+    std::cout << std::endl;
 
     greedyTSP("dj38.tsp"); // 28,863, time 1ms
     std::cout << std::endl;
