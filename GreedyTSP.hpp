@@ -19,6 +19,7 @@
 #include <utility>
 #include <queue>
 #include <unordered_map>
+#include <unordered_set>
 
 
 class Node {
@@ -122,6 +123,44 @@ public:
         }
 
 
+
+    // utility function to perform DFS to check for cycles
+    bool hasCycleUtil(Node* current, Node* parent, std::unordered_set<Node*>& visited) {
+        visited.insert(current);
+
+        for (Node* neighbor : {current->neighbor1, current->neighbor2}) {
+            if (neighbor != nullptr && neighbor != parent) {
+                if (visited.find(neighbor) == visited.end()) {
+                    if (hasCycleUtil(neighbor, current, visited)) {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // function to check if adding an edge between two nodes would create a cycle
+    bool hasCycle(Node* np1, Node* np2) {
+        std::unordered_set<Node*> visited;
+
+        if (hasCycleUtil(np1, nullptr, visited)) {
+            return true;
+        }
+
+        visited.clear();
+
+        if (hasCycleUtil(np2, nullptr, visited)) {
+            return true;
+        }
+
+        return false;
+    }
+
+
     // function checks if an edge can be added between two nodes
     // based on two conditions:
     // 1) if either node already has 2 edges we can't add an edge
@@ -146,8 +185,18 @@ public:
             return false;
         }
 
+        // Check for cycle using DFS
+        if (hasCycle(np1, np2)) {
+            return false;
+        }
+
+
+
         return true;
     }
+
+
+    
 
     // main function
     void run() {
